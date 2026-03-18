@@ -115,6 +115,9 @@ body {
   padding: 12px 28px;
   border-bottom: 1px solid var(--border);
   background: var(--bg2);
+  position: sticky;
+  top: 65px;
+  z-index: 9;
 }
 .filter-label { font-size: 11px; color: var(--text3); white-space: nowrap; }
 .filter-group { display: flex; align-items: center; gap: 6px; }
@@ -140,7 +143,7 @@ body {
 .filter-apply:hover { background: var(--accent); color: var(--bg); }
 
 /* ─── Main ─── */
-.main { overflow-y: auto; }
+.main { overflow-y: auto; height: 100vh; }
 
 .topbar {
   display: flex;
@@ -369,9 +372,9 @@ body {
         <span class="filter-label">기간</span>
         <div class="quick-btns">
           <button class="quick-btn" onclick="setQuickDate(3, this)">3M</button>
-          <button class="quick-btn active" onclick="setQuickDate(6, this)">6M</button>
+          <button class="quick-btn" onclick="setQuickDate(6, this)">6M</button>
           <button class="quick-btn" onclick="setQuickDate(12, this)">12M</button>
-          <button class="quick-btn" onclick="setQuickDate(0, this)">전체</button>
+          <button class="quick-btn active" onclick="setQuickDate(0, this)">전체</button>
         </div>
         <input class="date-input" type="month" id="dateFrom" oninput="onDateInput()">
         <span style="font-size:11px;color:var(--text3);">~</span>
@@ -511,20 +514,35 @@ function getPrevMonthly() { const d = filteredMonthly(); return d[d.length-2]||{
 
 function filteredPeriodData() {
   let rows = DATA[period] || [];
-  if (filterDateFrom) rows = rows.filter(r => getRowYm(r) >= filterDateFrom);
-  if (filterDateTo)   rows = rows.filter(r => getRowYm(r) <= filterDateTo);
+  const from7 = filterDateFrom ? filterDateFrom.slice(0,7) : '';
+  const to7   = filterDateTo   ? filterDateTo.slice(0,7)   : '';
+  if (!from7 && !to7) return rows;
+  if (period === 'monthly') {
+    if (from7) rows = rows.filter(r => (r.ym||'').slice(0,7) >= from7);
+    if (to7)   rows = rows.filter(r => (r.ym||'').slice(0,7) <= to7);
+  } else if (period === 'weekly') {
+    if (from7) rows = rows.filter(r => (r.week_start_date||'').slice(0,7) >= from7);
+    if (to7)   rows = rows.filter(r => (r.week_start_date||'').slice(0,7) <= to7);
+  } else {
+    if (from7) rows = rows.filter(r => (r.dt||'').slice(0,7) >= from7);
+    if (to7)   rows = rows.filter(r => (r.dt||'').slice(0,7) <= to7);
+  }
   return rows;
 }
 function filteredMonthly() {
   let rows = DATA.monthly || [];
-  if (filterDateFrom) rows = rows.filter(r => (r.ym||'') >= filterDateFrom);
-  if (filterDateTo)   rows = rows.filter(r => (r.ym||'') <= filterDateTo);
+  const from7 = filterDateFrom ? filterDateFrom.slice(0,7) : '';
+  const to7   = filterDateTo   ? filterDateTo.slice(0,7)   : '';
+  if (from7) rows = rows.filter(r => (r.ym||'').slice(0,7) >= from7);
+  if (to7)   rows = rows.filter(r => (r.ym||'').slice(0,7) <= to7);
   return rows;
 }
 function filteredHourly() {
   let rows = DATA.hourly || [];
-  if (filterDateFrom) rows = rows.filter(r => (r.ym||'') >= filterDateFrom);
-  if (filterDateTo)   rows = rows.filter(r => (r.ym||'') <= filterDateTo);
+  const from7 = filterDateFrom ? filterDateFrom.slice(0,7) : '';
+  const to7   = filterDateTo   ? filterDateTo.slice(0,7)   : '';
+  if (from7) rows = rows.filter(r => (r.ym||'').slice(0,7) >= from7);
+  if (to7)   rows = rows.filter(r => (r.ym||'').slice(0,7) <= to7);
   return rows;
 }
 function getRowYm(r) { return r.ym || r.week_label || r.dt || ''; }
@@ -893,7 +911,7 @@ function buildCharts() {
     return true;
   });
   const ctx3 = document.getElementById('cDemand');
-  if (ctx3 && ndRows.length) charts.demand = new Chart(ctx3, {
+  if (ctx3) charts.demand = new Chart(ctx3, {
     type: 'bar',
     data: {
       labels: ndRows.map(r => r.ym ? r.ym.slice(2).replace('-', '.') : r.ym),
@@ -915,14 +933,14 @@ function buildCharts() {
   /* 월별 기기 가동률 */
   const regDev = (DATA.device||[]).slice(-1)[0]?.registered_devices || 0;
   const ctxDr = document.getElementById('cDeviceRate');
-  if (ctxDr && regDev) {
+  if (ctxDr) {
     const mRows = filteredMonthly();
     charts.deviceRate = new Chart(ctxDr, {
       type: 'line',
       data: {
         labels: mRows.map(r => r.ym ? r.ym.slice(2).replace('-', '.') : r.ym),
         datasets: [{
-          data: mRows.map(r => r.operated_devices != null ? parseFloat((r.operated_devices / regDev * 100).toFixed(1)) : null),
+          data: mRows.map(r => (regDev && r.operated_devices != null) ? parseFloat((r.operated_devices / regDev * 100).toFixed(1)) : null),
           borderColor: '#4ade9a',
           backgroundColor: 'rgba(74,222,154,0.08)',
           pointBackgroundColor: '#4ade9a',
@@ -997,15 +1015,13 @@ function buildCharts() {
    Filter functions
 ══════════════════════════════════════════════════════════════════ */
 function initFilters() {
-  /* 날짜 초기값 — 최근 6개월 */
+  /* 날짜 초기값 — 전체 */
   const allYms = [...new Set((DATA.monthly||[]).map(r=>r.ym))].sort();
   if (allYms.length) {
-    filterDateTo = allYms[allYms.length - 1];
-    const from = new Date(filterDateTo + '-01');
-    from.setMonth(from.getMonth() - 5);
-    filterDateFrom = from.toISOString().slice(0, 7);
+    filterDateFrom = allYms[0];
+    filterDateTo   = allYms[allYms.length - 1];
     document.getElementById('dateFrom').value = filterDateFrom;
-    document.getElementById('dateTo').value = filterDateTo;
+    document.getElementById('dateTo').value   = filterDateTo;
   }
 }
 
