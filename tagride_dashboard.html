@@ -395,13 +395,12 @@ body {
    Sheets → 파일 → 공유 → 웹에 게시 → 시트 선택 → CSV → URL 복사
 ══════════════════════════════════════════════════════════════════ */
 const SHEET_URLS = {
-  monthly:    'https://docs.google.com/spreadsheets/d/e/2PACX-1vSnRBv3qbRNxUkFenEeB95nMlfJwAkdc_r5xLG9mRSC-kccEX51vSZgapG7vY9y9Z0qV4Yk64oNRJlz/pub?gid=800920326&single=true&output=csv',
-  weekly:     'https://docs.google.com/spreadsheets/d/e/2PACX-1vSnRBv3qbRNxUkFenEeB95nMlfJwAkdc_r5xLG9mRSC-kccEX51vSZgapG7vY9y9Z0qV4Yk64oNRJlz/pub?gid=1748082162&single=true&output=csv',
-  daily:      'https://docs.google.com/spreadsheets/d/e/2PACX-1vSnRBv3qbRNxUkFenEeB95nMlfJwAkdc_r5xLG9mRSC-kccEX51vSZgapG7vY9y9Z0qV4Yk64oNRJlz/pub?gid=1657948247&single=true&output=csv',
-  hourly:     'https://docs.google.com/spreadsheets/d/e/2PACX-1vSnRBv3qbRNxUkFenEeB95nMlfJwAkdc_r5xLG9mRSC-kccEX51vSZgapG7vY9y9Z0qV4Yk64oNRJlz/pub?gid=917682227&single=true&output=csv',
-  region:     'https://docs.google.com/spreadsheets/d/e/2PACX-1vSnRBv3qbRNxUkFenEeB95nMlfJwAkdc_r5xLG9mRSC-kccEX51vSZgapG7vY9y9Z0qV4Yk64oNRJlz/pub?gid=442805510&single=true&output=csv',
-  new_demand: 'https://docs.google.com/spreadsheets/d/e/2PACX-1vSnRBv3qbRNxUkFenEeB95nMlfJwAkdc_r5xLG9mRSC-kccEX51vSZgapG7vY9y9Z0qV4Yk64oNRJlz/pub?gid=1718712541&single=true&output=csv',
-  device:     'https://docs.google.com/spreadsheets/d/e/2PACX-1vSnRBv3qbRNxUkFenEeB95nMlfJwAkdc_r5xLG9mRSC-kccEX51vSZgapG7vY9y9Z0qV4Yk64oNRJlz/pub?gid=634289511&single=true&output=csv',
+  monthly:    'YOUR_RAW_MONTHLY_CSV_URL',
+  weekly:     'YOUR_RAW_WEEKLY_CSV_URL',
+  daily:      'YOUR_RAW_DAILY_CSV_URL',
+  hourly:     'YOUR_RAW_HOURLY_CSV_URL',
+  new_demand: 'YOUR_RAW_NEW_DEMAND_CSV_URL',
+  device:     'YOUR_RAW_DEVICE_CSV_URL',
 };
 
 /* ══════════════════════════════════════════════════════════════════
@@ -529,6 +528,22 @@ function filteredHourly() {
 }
 function getRowYm(r) { return r.ym || r.week_label || r.dt || ''; }
 
+function fmtLabel(r) {
+  if (period === 'weekly') {
+    // week_label: '2025-W36' → 'W36'
+    const wl = r.week_label || '';
+    return wl.replace(/^\d{4}-/, '');
+  }
+  if (period === 'daily') {
+    // dt: '2025-10-01' → '10/01'
+    const dt = r.dt || '';
+    return dt.length >= 10 ? dt.slice(5).replace('-', '/') : dt;
+  }
+  // monthly: '2025-10' → '25.10'
+  const ym = r.ym || '';
+  return ym.length >= 7 ? ym.slice(2).replace('-', '.') : ym;
+}
+
 function destroyCharts() {
   Object.values(charts).forEach(c => { try { c.destroy(); } catch(e){} });
   charts = {};
@@ -574,8 +589,9 @@ function buildHTML() {
 
   /* ── ② 신규 수요 ── */
   const ndFiltered = (DATA.new_demand||[]).filter(r => {
-    if (filterDateFrom && r.ym < filterDateFrom) return false;
-    if (filterDateTo   && r.ym > filterDateTo)   return false;
+    const ym = (r.ym||'').slice(0,7);
+    if (filterDateFrom && ym < filterDateFrom.slice(0,7)) return false;
+    if (filterDateTo   && ym > filterDateTo.slice(0,7))   return false;
     return true;
   });
   const ndCur = ndFiltered[ndFiltered.length - 1] || {};
@@ -590,24 +606,24 @@ function buildHTML() {
   return `
   <div class="kpi-grid c4" style="margin-bottom:24px;">
     <div class="kpi">
-      <div class="kpi-label">완료 라이드</div>
-      <div class="kpi-val">${fmt(curM.completed_rides)}</div>
-      <div class="kpi-delta">${delta(curM.completed_rides, prvM.completed_rides)} vs 전월</div>
+      <div class="kpi-label">완료 라이드 (${periodLabel})</div>
+      <div class="kpi-val">${fmt(cur.completed_rides)}</div>
+      <div class="kpi-delta">${delta(cur.completed_rides, prv.completed_rides)} vs 전${periodLabel}</div>
     </div>
     <div class="kpi">
-      <div class="kpi-label">MAU</div>
-      <div class="kpi-val">${fmt(curM.mau)}</div>
-      <div class="kpi-delta">${delta(curM.mau, prvM.mau)} vs 전월</div>
+      <div class="kpi-label">${userLabel}</div>
+      <div class="kpi-val">${fmt(cur[userKey])}</div>
+      <div class="kpi-delta">${delta(cur[userKey], prv[userKey])} vs 전${periodLabel}</div>
     </div>
     <div class="kpi">
-      <div class="kpi-label">월 매출</div>
-      <div class="kpi-val">${fmtWon(curM.total_revenue)}</div>
-      <div class="kpi-delta">${delta(curM.total_revenue, prvM.total_revenue)} vs 전월</div>
+      <div class="kpi-label">매출 (${periodLabel})</div>
+      <div class="kpi-val">${fmtWon(cur.total_revenue)}</div>
+      <div class="kpi-delta">${delta(cur.total_revenue, prv.total_revenue)} vs 전${periodLabel}</div>
     </div>
     <div class="kpi">
-      <div class="kpi-label">운행 기기수</div>
-      <div class="kpi-val">${curM.operated_devices ? fmt(curM.operated_devices)+'대' : '—'}</div>
-      <div class="kpi-delta">${delta(curM.operated_devices, prvM.operated_devices)} vs 전월</div>
+      <div class="kpi-label">운행 기기수 (${periodLabel})</div>
+      <div class="kpi-val">${cur.operated_devices ? fmt(cur.operated_devices)+'대' : '—'}</div>
+      <div class="kpi-delta">${delta(cur.operated_devices, prv.operated_devices)} vs 전${periodLabel}</div>
     </div>
   </div>
 
@@ -730,6 +746,11 @@ function buildHTML() {
         <div class="kpi-delta"><span class="${parseFloat(gadongyul)>=70?'up':parseFloat(gadongyul)>=50?'warn':'dn'}">${gadongyul !== '—' ? gadongyul + '% 가동' : '—'}</span></div>
       </div>
     </div>
+    <div class="chart-card" style="margin-top:10px;">
+      <div class="chart-card-title">월별 기기 가동률 추이</div>
+      <div class="chart-card-sub">운행 기기수 / 등록 기기수 × 100 · 등록 기기수 ${regDevices ? fmt(regDevices)+'대' : '—'} 기준</div>
+      <div class="chart-wrap" style="height:120px;"><canvas id="cDeviceRate"></canvas></div>
+    </div>
   </div>
 
   <div class="divider"></div>
@@ -789,7 +810,7 @@ function buildHTML() {
 
 function buildCharts() {
   const rows = filteredPeriodData();
-  const labels = rows.map(r => getRowYm(r));
+  const labels = rows.map(r => fmtLabel(r));
   const userKey = period === 'monthly' ? 'mau' : period === 'weekly' ? 'wau' : 'dau';
 
   /* 완료 건수 추이 */
@@ -807,13 +828,11 @@ function buildCharts() {
     },
   });
 
-  /* MAU 추이 (monthly 기준) */
-  const monthlyRows = filteredMonthly();
-  const monthlyLabels = monthlyRows.map(r => r.ym);
+  /* MAU / WAU / DAU 추이 — 집계 단위 연동 */
   const ctxMau = document.getElementById('cMauUsage');
   if (ctxMau) charts.mauUsage = new Chart(ctxMau, {
     type: 'line',
-    data: { labels: monthlyLabels, datasets: [{ data: monthlyRows.map(r=>r.mau), borderColor: '#60a5fa', backgroundColor: 'rgba(96,165,250,0.08)', pointBackgroundColor: '#60a5fa', pointRadius: 3, borderWidth: 1.5, tension: 0.3, fill: true }] },
+    data: { labels, datasets: [{ data: rows.map(r=>r[userKey]), borderColor: '#60a5fa', backgroundColor: 'rgba(96,165,250,0.08)', pointBackgroundColor: '#60a5fa', pointRadius: 3, borderWidth: 1.5, tension: 0.3, fill: true }] },
     options: { ...chartDefaults,
       scales: {
         x: { grid:{color:gc}, ticks:{color:tc, font:{size:10,family:'DM Mono'}} },
@@ -867,15 +886,16 @@ function buildCharts() {
 
   /* 신규 수요 */
   const ndRows = (DATA.new_demand||[]).filter(r => {
-    if (filterDateFrom && r.ym < filterDateFrom) return false;
-    if (filterDateTo   && r.ym > filterDateTo)   return false;
+    const ym = (r.ym||'').slice(0,7);
+    if (filterDateFrom && ym < filterDateFrom.slice(0,7)) return false;
+    if (filterDateTo   && ym > filterDateTo.slice(0,7))   return false;
     return true;
   });
   const ctx3 = document.getElementById('cDemand');
   if (ctx3 && ndRows.length) charts.demand = new Chart(ctx3, {
     type: 'bar',
     data: {
-      labels: ndRows.map(r=>r.ym),
+      labels: ndRows.map(r => r.ym ? r.ym.slice(2).replace('-', '.') : r.ym),
       datasets: [
         { type: 'line', label:'태그라이드 비중',  data: ndRows.map(r=>r.tagride_share_pct),  borderColor: '#fbbf24', backgroundColor: 'transparent', pointBackgroundColor: '#fbbf24', pointRadius: 3, borderWidth: 1.5, tension: 0.3, yAxisID: 'y2', order: 0 },
         { type: 'bar',  label:'태그라이드',      data: ndRows.map(r=>r.tagride_rides),      backgroundColor: '#4ade9a', borderRadius: 3, yAxisID: 'y', order: 1 },
@@ -890,6 +910,35 @@ function buildCharts() {
       }
     },
   });
+
+  /* 월별 기기 가동률 */
+  const regDev = (DATA.device||[]).slice(-1)[0]?.registered_devices || 0;
+  const ctxDr = document.getElementById('cDeviceRate');
+  if (ctxDr && regDev) {
+    const mRows = filteredMonthly();
+    charts.deviceRate = new Chart(ctxDr, {
+      type: 'line',
+      data: {
+        labels: mRows.map(r => r.ym ? r.ym.slice(2).replace('-', '.') : r.ym),
+        datasets: [{
+          data: mRows.map(r => r.operated_devices != null ? parseFloat((r.operated_devices / regDev * 100).toFixed(1)) : null),
+          borderColor: '#4ade9a',
+          backgroundColor: 'rgba(74,222,154,0.08)',
+          pointBackgroundColor: '#4ade9a',
+          pointRadius: 3,
+          borderWidth: 1.5,
+          tension: 0.3,
+          fill: true,
+        }]
+      },
+      options: { ...chartDefaults,
+        scales: {
+          x: { grid:{color:gc}, ticks:{color:tc, font:{size:10,family:'DM Mono'}} },
+          y: { grid:{color:gc}, ticks:{color:tc, font:{size:10,family:'DM Mono'}, callback: v => v+'%'}, min: 0, max: 100 },
+        }
+      },
+    });
+  }
 
   /* 매출 */
   const ctx4 = document.getElementById('cRevenue');
