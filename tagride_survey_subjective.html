@@ -1,0 +1,285 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>태그라이드 주관식 응답 요약</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { font-family: 'Pretendard', -apple-system, BlinkMacSystemFont, sans-serif; background: #f5f6fa; color: #2d3436; line-height: 1.7; }
+  .container { max-width: 1100px; margin: 0 auto; padding: 24px; }
+  h1 { font-size: 26px; font-weight: 700; margin-bottom: 6px; color: #1a1a2e; }
+  .subtitle { color: #636e72; font-size: 14px; margin-bottom: 28px; }
+  .section { margin-bottom: 36px; }
+  .section-title { font-size: 18px; font-weight: 700; margin-bottom: 16px; color: #1a1a2e; padding-left: 12px; border-left: 4px solid #0984e3; }
+  .card { background: #fff; border-radius: 12px; padding: 24px; box-shadow: 0 1px 3px rgba(0,0,0,0.08); margin-bottom: 16px; }
+  .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+  .chart-wrap { position: relative; height: 320px; }
+  h3 { font-size: 15px; font-weight: 600; margin-bottom: 14px; color: #2d3436; }
+  .theme { margin-bottom: 24px; }
+  .theme-header { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; }
+  .theme-icon { width: 36px; height: 36px; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 18px; color: #fff; flex-shrink: 0; }
+  .theme-title { font-size: 16px; font-weight: 700; }
+  .theme-count { font-size: 13px; color: #636e72; }
+  .theme-bar { height: 6px; border-radius: 3px; background: #dfe6e9; margin-bottom: 10px; }
+  .theme-bar-fill { height: 100%; border-radius: 3px; }
+  .quote-list { padding-left: 0; list-style: none; }
+  .quote-list li { padding: 8px 12px; margin-bottom: 6px; background: #f8f9fa; border-radius: 8px; font-size: 13px; border-left: 3px solid #dfe6e9; }
+  .quote-list li.positive { border-left-color: #00b894; }
+  .quote-list li.negative { border-left-color: #d63031; }
+  .quote-list li.neutral { border-left-color: #fdcb6e; }
+  .tag { display: inline-block; padding: 2px 8px; border-radius: 10px; font-size: 11px; font-weight: 600; margin-right: 4px; }
+  .tag-pos { background: #d5f5e3; color: #00b894; }
+  .tag-neg { background: #fad7d7; color: #d63031; }
+  .tag-neu { background: #fef3cd; color: #d68910; }
+  .insight-box { background: linear-gradient(135deg, #0984e3, #6c5ce7); color: #fff; border-radius: 12px; padding: 24px; margin-bottom: 24px; }
+  .insight-box h2 { font-size: 17px; margin-bottom: 10px; }
+  .insight-box ul { padding-left: 20px; font-size: 14px; line-height: 1.9; }
+  .stat-row { display: flex; gap: 12px; margin-bottom: 20px; }
+  .stat-box { flex: 1; background: #f8f9fa; border-radius: 10px; padding: 16px; text-align: center; }
+  .stat-box .num { font-size: 28px; font-weight: 700; }
+  .stat-box .label { font-size: 12px; color: #636e72; margin-top: 4px; }
+  .sentiment-bar { display: flex; height: 32px; border-radius: 8px; overflow: hidden; margin-bottom: 8px; }
+  .sentiment-bar div { display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 600; color: #fff; }
+  table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  th { background: #f5f6fa; padding: 10px 12px; text-align: left; font-weight: 600; border-bottom: 2px solid #dfe6e9; }
+  td { padding: 10px 12px; border-bottom: 1px solid #f0f0f0; }
+</style>
+</head>
+<body>
+<div class="container">
+  <h1>태그라이드 주관식 응답 심층 분석</h1>
+  <p class="subtitle">태그라이드 이용자 123건의 주관식 응답을 주제별로 분류·요약</p>
+
+  <!-- 전체 감성 요약 -->
+  <div class="card">
+    <h3>전체 응답 감성 분포</h3>
+    <div class="stat-row">
+      <div class="stat-box"><div class="num" style="color:#00b894;">53건</div><div class="label">긍정 (43.1%)</div></div>
+      <div class="stat-box"><div class="num" style="color:#d63031;">45건</div><div class="label">부정 (36.6%)</div></div>
+      <div class="stat-box"><div class="num" style="color:#fdcb6e;">25건</div><div class="label">혼합/중립 (20.3%)</div></div>
+    </div>
+    <div class="sentiment-bar">
+      <div style="width:43.1%; background:#00b894;">긍정 43%</div>
+      <div style="width:20.3%; background:#fdcb6e; color:#2d3436;">혼합 20%</div>
+      <div style="width:36.6%; background:#d63031;">부정 37%</div>
+    </div>
+    <p style="font-size:13px; color:#636e72; margin-top:8px;">* "편하지만 비싸다"처럼 긍정+부정이 함께 언급된 응답은 혼합으로 분류</p>
+  </div>
+
+  <!-- 카테고리 차트 -->
+  <div class="grid-2">
+    <div class="card">
+      <h3>주제별 언급 빈도</h3>
+      <div class="chart-wrap"><canvas id="chart-topic"></canvas></div>
+    </div>
+    <div class="card">
+      <h3>부정 응답 세부 분류</h3>
+      <div class="chart-wrap"><canvas id="chart-negative"></canvas></div>
+    </div>
+  </div>
+
+  <!-- 테마별 상세 -->
+  <div class="section" style="margin-top:24px;">
+    <div class="section-title">주제별 대표 응답 및 인사이트</div>
+
+    <!-- 테마 1: 가격 -->
+    <div class="card theme">
+      <div class="theme-header">
+        <div class="theme-icon" style="background:#d63031;">$</div>
+        <div>
+          <div class="theme-title">가격 부담 <span class="tag tag-neg">Pain Point #1</span></div>
+          <div class="theme-count">26건 (21.1%) — 가장 많이 언급된 부정 요인</div>
+        </div>
+      </div>
+      <div class="theme-bar"><div class="theme-bar-fill" style="width:21.1%; background:#d63031;"></div></div>
+      <ul class="quote-list">
+        <li class="negative">"태그라이드 비용이 너무 큰것같음. 앱 이용보다 더 비싸 1번 이용 이후로 이용하고 있지 않다"</li>
+        <li class="negative">"짧은 거리도 2,200원씩이나 나와서 너무 비싸지는 않은지 의혹이 제기되네요"</li>
+        <li class="negative">"가격이 합리적이었으면 계속 이용했을겁니다 ㅠㅠ"</li>
+        <li class="negative">"비싸고 앱 연동 안되고 환승하고 찍었는데 앱보다 더 많이 나감. 애초에 앱 사용대비 저렴할 수가 없는 구조"</li>
+        <li class="neutral">"편리하지만 가격이 부담스러워요" / "이용은 편리하나 비용이 올라 이용하지 않게됨"</li>
+      </ul>
+      <p style="font-size:13px; color:#636e72; margin-top:10px;"><strong>시사점:</strong> 앱 대비 높은 가격이 재이용 최대 장벽. 특히 "1회 이용 후 앱으로 복귀"하는 패턴의 근본 원인. 가격 차별화 또는 가격 근거 투명화 필요.</p>
+    </div>
+
+    <!-- 테마 2: 폰 배터리 없을 때 -->
+    <div class="card theme">
+      <div class="theme-header">
+        <div class="theme-icon" style="background:#00b894;">🔋</div>
+        <div>
+          <div class="theme-title">폰 배터리 없을 때 유용 <span class="tag tag-pos">Value Prop #1</span></div>
+          <div class="theme-count">11건 (8.9%) — 태그라이드만의 고유 가치</div>
+        </div>
+      </div>
+      <div class="theme-bar"><div class="theme-bar-fill" style="width:8.9%; background:#00b894;"></div></div>
+      <ul class="quote-list">
+        <li class="positive">"집 갈 때 폰 배터리가 없을 때 사용할 때 용이했습니다"</li>
+        <li class="positive">"광안리 불꽃축제에서 집갈때 앱을 이용하려 하였는데 전파가 안터져서 카드로 편하게 찍어서 사용한 경험이 있다"</li>
+        <li class="positive">"계좌에 돈이 부족하거나 데이터가 없을때 이용하기에 편리했다"</li>
+        <li class="positive">"폰이 꺼졌을때 결제니 코드인식이 안되는 상황에서도 태그라이드를 통해 결제를 할 수 있어 편리함"</li>
+      </ul>
+      <p style="font-size:13px; color:#636e72; margin-top:10px;"><strong>시사점:</strong> "폰이 안 될 때의 유일한 대안"이라는 명확한 사용 시나리오 존재. 마케팅 메시지에 적극 활용 가능.</p>
+    </div>
+
+    <!-- 테마 3: 카드 인식 오류 -->
+    <div class="card theme">
+      <div class="theme-header">
+        <div class="theme-icon" style="background:#e17055;">⚡</div>
+        <div>
+          <div class="theme-title">카드 인식 오류 / 느림 <span class="tag tag-neg">Pain Point #2</span></div>
+          <div class="theme-count">11건 (8.9%) — 핵심 UX 장벽</div>
+        </div>
+      </div>
+      <div class="theme-bar"><div class="theme-bar-fill" style="width:8.9%; background:#e17055;"></div></div>
+      <ul class="quote-list">
+        <li class="negative">"인식률이 생각보다 너무 낮아서 불편했습니다 🥲"</li>
+        <li class="negative">"태그라이드를 여러번 시도해보았으나, 잘 인식이 되지 않거나 오류가 났는지 잘 되지 않았습니다. 분명히 앱에 등록한 카드로 찍었음에도 인식 자체가 안되거나 찍혔는데 소리는 안 나는 등"</li>
+        <li class="negative">"급하게 지각하지 않기 위해 태그를 할 때, 통신과 해제에 조금 시간이 걸리고"</li>
+        <li class="negative">"절전시 태그가 안되는것이 불편하다"</li>
+        <li class="negative">"가격 너무 비싸고 기기가 인식을 잘 못합니다. 인식했는데 갑자기 빨간불 뜨면서 인식불가한 경우도 있어요"</li>
+      </ul>
+      <p style="font-size:13px; color:#636e72; margin-top:10px;"><strong>시사점:</strong> 인식 실패가 "급할 때"라는 핵심 사용 맥락과 충돌. 인식 속도/안정성 개선이 서비스 신뢰도에 직결.</p>
+    </div>
+
+    <!-- 테마 4: 결제 투명성 -->
+    <div class="card theme">
+      <div class="theme-header">
+        <div class="theme-icon" style="background:#fdcb6e; color:#2d3436;">💰</div>
+        <div>
+          <div class="theme-title">결제 금액 불투명 <span class="tag tag-neu">Pain Point #3</span></div>
+          <div class="theme-count">5건 (4.1%) — 심리적 불안 요소</div>
+        </div>
+      </div>
+      <div class="theme-bar"><div class="theme-bar-fill" style="width:4.1%; background:#fdcb6e;"></div></div>
+      <ul class="quote-list">
+        <li class="neutral">"앱으로 이용할 때는 이용종료 후에 가격이 바로 떠서 얼마를 결제했는지 알 수 있었는데, 태그라이드를 사용했을때는 총 얼마가 결제된건지를 모르고 그냥 사용했습니다"</li>
+        <li class="neutral">"카드를 찍을 수 있어서 사용하기 좋았지만 금액에 대한 공지 내용이 없어서 아쉽다"</li>
+        <li class="neutral">"환승할인이라길래 무료인줄 알았지만 할인액이 조금 있을 뿐이었다"</li>
+      </ul>
+      <p style="font-size:13px; color:#636e72; margin-top:10px;"><strong>시사점:</strong> 앱 없이 이용하는 특성상 요금 확인 수단이 부재. "얼마가 나올지 모르는 불안"이 가격 부담 인식을 증폭시키는 구조.</p>
+    </div>
+
+    <!-- 테마 5: 환승 할인 -->
+    <div class="card theme">
+      <div class="theme-header">
+        <div class="theme-icon" style="background:#0984e3;">🔄</div>
+        <div>
+          <div class="theme-title">환승 할인의 가치 <span class="tag tag-pos">Value Prop #2</span></div>
+          <div class="theme-count">8건 (6.5%) — 긍정 5건, 불만 3건</div>
+        </div>
+      </div>
+      <div class="theme-bar"><div class="theme-bar-fill" style="width:6.5%; background:#0984e3;"></div></div>
+      <ul class="quote-list">
+        <li class="positive">"태그라이드의 가장 큰 장점은 환승이 된다는 점. 등교할 때 지하철역까지 가는데 환승이 안되면 돈이 두배로 들어 불편했는데 태그라이드 기능 덕분에 훨씬 편리해졌다"</li>
+        <li class="positive">"지하철 타고 환승하는 것처럼 대중교통처럼 이용할 수 있어서 이질감 없이 간편해서 좋았다"</li>
+        <li class="negative">"태그라이드로 이용하고 난 후 다시 이용하려고 하면 환승 할인이 안되는게 많이 아쉬웠습니다"</li>
+        <li class="negative">"먼저 찍고 하니까 환승이 안됐어요 ㅠ" (환승 방향 제한에 대한 혼란)</li>
+      </ul>
+      <p style="font-size:13px; color:#636e72; margin-top:10px;"><strong>시사점:</strong> 환승 할인은 강력한 유인이나, 방향 제한(대중교통→태그라이드만 환승)에 대한 인지 부족으로 기대와 현실 간 갭 발생.</p>
+    </div>
+
+    <!-- 테마 6: 반납 불안 -->
+    <div class="card theme">
+      <div class="theme-header">
+        <div class="theme-icon" style="background:#6c5ce7;">🅿</div>
+        <div>
+          <div class="theme-title">반납/하차 시 불안 <span class="tag tag-neg">UX Issue</span></div>
+          <div class="theme-count">4건 (3.3%)</div>
+        </div>
+      </div>
+      <div class="theme-bar"><div class="theme-bar-fill" style="width:3.3%; background:#6c5ce7;"></div></div>
+      <ul class="quote-list">
+        <li class="negative">"내려서 다시 카드 찍을 때 잘 찍혔는지 안 찍혔는지 몰르겠어서 좀 불안해요"</li>
+        <li class="negative">"하차 시 주차구역에서 주차를 하더라도 위치 인식을 못해서"</li>
+        <li class="negative">"반납이 안되어 18분동안 그냥 돈이 나가서 고객센터 통해 환불받은적이 있음"</li>
+      </ul>
+      <p style="font-size:13px; color:#636e72; margin-top:10px;"><strong>시사점:</strong> 앱 화면 없이 이용하기 때문에 "제대로 반납됐는지" 확인 불가. 반납 완료 피드백(소리, LED 등) 강화 필요.</p>
+    </div>
+
+    <!-- 테마 7: 앱 불필요 편의성 -->
+    <div class="card theme">
+      <div class="theme-header">
+        <div class="theme-icon" style="background:#00b894;">📱</div>
+        <div>
+          <div class="theme-title">앱 없이/안 열고 탑승 <span class="tag tag-pos">Value Prop #3</span></div>
+          <div class="theme-count">7건 (5.7%)</div>
+        </div>
+      </div>
+      <div class="theme-bar"><div class="theme-bar-fill" style="width:5.7%; background:#00b894;"></div></div>
+      <ul class="quote-list">
+        <li class="positive">"앱을 안깔아도 탈수있어서 훨씬 편했고 돈도 많이 안들고 엄청 편하고 좋았어요"</li>
+        <li class="positive">"앱을 켜지 않고 바로바로 빌릴 수 있어서 편리했습니다"</li>
+        <li class="positive">"앱 키기 귀찮았는데 카드만 대면 사용할수 있어서 간편했음"</li>
+        <li class="positive">"카드만 대면 대여가 되서 굉장히 편리하지만 가격이 조금 비싼거 같다고 생각해요. 그래도 굉장히 많이 사용하고 있는 서비스입니다"</li>
+      </ul>
+    </div>
+  </div>
+
+  <!-- 핵심 인사이트 -->
+  <div class="insight-box">
+    <h2>주관식 응답 기반 핵심 인사이트</h2>
+    <ul>
+      <li><strong>가격이 최대 이탈 원인:</strong> 주관식에서도 "비싸다"가 압도적 1위(21.1%). 특히 "1회 체험 후 앱 복귀" 패턴의 핵심 동인이며, 결제 금액을 사전에 알 수 없는 구조가 체감 가격을 더 높이고 있음.</li>
+      <li><strong>폰 꺼짐/긴급 상황이 킬러 유스케이스:</strong> 축제·통신 불량·배터리 방전 등 "앱을 쓸 수 없는 순간"에 태그라이드만의 대체 불가 가치가 발생. 이 시나리오 중심으로 포지셔닝 권장.</li>
+      <li><strong>카드 인식 안정성이 서비스 신뢰를 좌우:</strong> "급할 때" 이용하는데 인식이 안 되면 경험이 크게 훼손됨. 절전 모드, 특정 카드 호환성 문제 해결이 시급.</li>
+      <li><strong>반납 완료 피드백 부재:</strong> 앱 화면이 없어 반납 성공 여부를 알 수 없고, 실패 시 요금이 계속 발생하는 리스크 → 소리·LED·SMS 등 즉각 피드백 필요.</li>
+      <li><strong>환승 할인 규칙 혼란:</strong> 환승 방향 제한(대중교통→태그라이드만 가능)을 모르고 이용해 실망하는 케이스 다수. 탑승 시점에 환승 가능 여부 안내 필요.</li>
+    </ul>
+  </div>
+
+  <!-- 미인지자 자유의견 요약 -->
+  <div class="section">
+    <div class="section-title">참고: 미인지자(347명)의 지쿠 자유의견 핵심 키워드</div>
+    <div class="card">
+      <p style="font-size:14px; margin-bottom:12px;">미인지 그룹에서 180건의 자유 의견이 수집되었으며, 태그라이드와 무관한 <strong>지쿠 서비스 전반</strong>에 대한 의견입니다. 주요 키워드:</p>
+      <table>
+        <thead><tr><th>주제</th><th>언급 빈도</th><th>대표 의견</th></tr></thead>
+        <tbody>
+          <tr><td><strong>가격 인하 요청</strong></td><td>~45건</td><td>"너무 비싸요", "가격 좀 내려주세요", "심야할증 이해 안됨"</td></tr>
+          <tr><td><strong>기기 배치 확대</strong></td><td>~25건</td><td>"이용 가능한 자전거가 너무 없음", "동네에 없다", "부산 전 지역 가능하게"</td></tr>
+          <tr><td><strong>주차 구역 확대</strong></td><td>~15건</td><td>"주차금지구역이 너무 많아서 불편", "GPS 오류로 반납불가"</td></tr>
+          <tr><td><strong>기기 품질/정비</strong></td><td>~10건</td><td>"브레이크 안되는 기기", "오르막길 힘 부족", "배터리 충전·정비 부족"</td></tr>
+          <tr><td><strong>만족/추천</strong></td><td>~60건</td><td>"너무 편하고 좋아요", "지쿠 없으면 학교도 못간다", "파킨슨병 12년차인 나로서는 소중한 이동수단"</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<script>
+Chart.defaults.font.family = "'Pretendard', -apple-system, sans-serif";
+Chart.defaults.font.size = 12;
+
+new Chart(document.getElementById('chart-topic'), {
+  type: 'bar',
+  data: {
+    labels: ['단순 긍정', '가격 부담', '폰 배터리 유용', '카드 인식 오류', '앱 불필요 편의', '환승 가치', '결제 투명성', '가격 개선 요청', '반납 불안', '환승 제한 불만'],
+    datasets: [{
+      data: [30, 22, 11, 11, 7, 5, 5, 4, 4, 3],
+      backgroundColor: ['#00b894','#d63031','#00b894','#e17055','#00b894','#0984e3','#fdcb6e','#fdcb6e','#e17055','#e17055']
+    }]
+  },
+  options: {
+    indexAxis: 'y',
+    responsive: true, maintainAspectRatio: false,
+    plugins: { legend: { display: false } },
+    scales: { x: { beginAtZero: true, title: { display: true, text: '응답 수 (건)' } } }
+  }
+});
+
+new Chart(document.getElementById('chart-negative'), {
+  type: 'doughnut',
+  data: {
+    labels: ['가격 부담 (22건)', '카드 인식 오류 (11건)', '결제 투명성 (5건)', '반납 불안 (4건)', '환승 제한 (3건)'],
+    datasets: [{ data: [22, 11, 5, 4, 3], backgroundColor: ['#d63031','#e17055','#fdcb6e','#6c5ce7','#b2bec3'] }]
+  },
+  options: {
+    responsive: true, maintainAspectRatio: false,
+    plugins: { legend: { position: 'bottom' } }
+  }
+});
+</script>
+</body>
+</html>
