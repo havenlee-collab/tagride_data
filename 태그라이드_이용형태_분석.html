@@ -1,0 +1,386 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>태그라이드 인앱서베이 이용 형태 분석</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { font-family: 'Pretendard', -apple-system, BlinkMacSystemFont, sans-serif; background: #f5f6fa; color: #2d3436; line-height: 1.6; }
+  .container { max-width: 1200px; margin: 0 auto; padding: 24px; }
+  h1 { font-size: 28px; font-weight: 700; margin-bottom: 8px; color: #1a1a2e; }
+  .subtitle { color: #636e72; font-size: 15px; margin-bottom: 32px; }
+  .summary-cards { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin-bottom: 32px; }
+  .card { background: #fff; border-radius: 12px; padding: 20px; box-shadow: 0 1px 3px rgba(0,0,0,0.08); }
+  .card-label { font-size: 13px; color: #636e72; margin-bottom: 4px; }
+  .card-value { font-size: 32px; font-weight: 700; }
+  .card-sub { font-size: 13px; color: #b2bec3; margin-top: 2px; }
+  .card.total .card-value { color: #1a1a2e; }
+  .card.user .card-value { color: #0984e3; }
+  .card.aware .card-value { color: #fdcb6e; }
+  .card.unaware .card-value { color: #d63031; }
+  .section { margin-bottom: 32px; }
+  .section-title { font-size: 18px; font-weight: 700; margin-bottom: 16px; color: #1a1a2e; padding-left: 12px; border-left: 4px solid #0984e3; }
+  .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+  .grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 16px; }
+  .chart-card { background: #fff; border-radius: 12px; padding: 24px; box-shadow: 0 1px 3px rgba(0,0,0,0.08); }
+  .chart-card h3 { font-size: 15px; font-weight: 600; margin-bottom: 16px; color: #2d3436; }
+  .chart-wrap { position: relative; height: 280px; }
+  .chart-wrap-tall { position: relative; height: 350px; }
+  .insight-box { background: #dfe6e9; border-radius: 8px; padding: 16px; margin-top: 12px; font-size: 13px; color: #2d3436; }
+  .insight-box strong { color: #0984e3; }
+  .full-width { grid-column: 1 / -1; }
+  .tag { display: inline-block; padding: 3px 10px; border-radius: 12px; font-size: 12px; font-weight: 600; margin-right: 6px; }
+  .tag-blue { background: #dfe6e9; color: #0984e3; }
+  .tag-yellow { background: #ffeaa7; color: #d68910; }
+  .tag-red { background: #fab1a0; color: #d63031; }
+  table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  th { background: #f5f6fa; padding: 10px 12px; text-align: left; font-weight: 600; border-bottom: 2px solid #dfe6e9; }
+  td { padding: 10px 12px; border-bottom: 1px solid #f0f0f0; }
+  tr:hover td { background: #f8f9fa; }
+  .bar-inline { display: inline-block; height: 8px; border-radius: 4px; margin-right: 8px; vertical-align: middle; }
+  .key-insight { background: linear-gradient(135deg, #0984e3 0%, #6c5ce7 100%); color: #fff; border-radius: 12px; padding: 24px; margin-bottom: 32px; }
+  .key-insight h2 { font-size: 18px; margin-bottom: 12px; }
+  .key-insight ul { padding-left: 20px; font-size: 14px; line-height: 1.8; }
+  .funnel { display: flex; align-items: center; justify-content: center; gap: 0; margin: 20px 0; }
+  .funnel-step { text-align: center; padding: 16px; color: #fff; font-weight: 700; font-size: 14px; }
+  .funnel-step .num { font-size: 28px; display: block; }
+  .funnel-step .pct { font-size: 12px; opacity: 0.8; }
+  .arrow { font-size: 24px; color: #b2bec3; margin: 0 -4px; }
+</style>
+</head>
+<body>
+<div class="container">
+  <h1>태그라이드 인앱서베이 이용 형태 분석</h1>
+  <p class="subtitle">부산 지역 지쿠 서비스 만족도 조사 | 전체 응답자 1,046명 기준</p>
+
+  <!-- Summary Cards -->
+  <div class="summary-cards">
+    <div class="card total">
+      <div class="card-label">전체 응답자</div>
+      <div class="card-value">1,046</div>
+      <div class="card-sub">명</div>
+    </div>
+    <div class="card user">
+      <div class="card-label"><span class="tag tag-blue">이용자</span> 태그라이드 이용</div>
+      <div class="card-value">271</div>
+      <div class="card-sub">25.9%</div>
+    </div>
+    <div class="card aware">
+      <div class="card-label"><span class="tag tag-yellow">인지 미이용</span> 알지만 미사용</div>
+      <div class="card-value">428</div>
+      <div class="card-sub">40.9%</div>
+    </div>
+    <div class="card unaware">
+      <div class="card-label"><span class="tag tag-red">미인지</span> 서비스 모름</div>
+      <div class="card-value">347</div>
+      <div class="card-sub">33.2%</div>
+    </div>
+  </div>
+
+  <!-- Funnel -->
+  <div class="card" style="margin-bottom:32px;">
+    <h3 style="font-size:15px; font-weight:600; margin-bottom:12px;">태그라이드 인지·이용 퍼널</h3>
+    <div class="funnel">
+      <div class="funnel-step" style="background:#0984e3; border-radius:8px 0 0 8px; width:33%;">
+        <span class="num">1,046</span>지쿠 이용자<br><span class="pct">100%</span>
+      </div>
+      <div class="arrow">▶</div>
+      <div class="funnel-step" style="background:#fdcb6e; color:#2d3436; width:28%;">
+        <span class="num">699</span>태그라이드 인지<br><span class="pct">66.8%</span>
+      </div>
+      <div class="arrow">▶</div>
+      <div class="funnel-step" style="background:#00b894; border-radius:0 8px 8px 0; width:20%;">
+        <span class="num">271</span>태그라이드 이용<br><span class="pct">25.9%</span>
+      </div>
+    </div>
+    <div class="insight-box">
+      지쿠 이용자 중 <strong>66.8%</strong>가 태그라이드를 인지하고 있으나, 실제 이용 전환율은 <strong>25.9%</strong>에 그침. 인지→이용 전환 과정에서 <strong>40.9%p</strong>가 이탈하고 있어 전환율 개선이 핵심 과제입니다.
+    </div>
+  </div>
+
+  <!-- Section 1: 지쿠 이용 패턴 비교 -->
+  <div class="section">
+    <div class="section-title">1. 지쿠 이용 패턴 비교 (3그룹)</div>
+    <div class="grid-2">
+      <div class="chart-card">
+        <h3>지쿠 이용 빈도 비교</h3>
+        <div class="chart-wrap"><canvas id="chart-freq"></canvas></div>
+      </div>
+      <div class="chart-card">
+        <h3>지쿠 이용 상황 비교 (Top 6)</h3>
+        <div class="chart-wrap"><canvas id="chart-situation"></canvas></div>
+      </div>
+      <div class="chart-card">
+        <h3>지쿠 선택 이유 비교 (Top 5)</h3>
+        <div class="chart-wrap"><canvas id="chart-reason"></canvas></div>
+      </div>
+      <div class="chart-card">
+        <h3>연령대 분포 비교</h3>
+        <div class="chart-wrap"><canvas id="chart-age"></canvas></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Section 2: 태그라이드 이용자 심층 -->
+  <div class="section">
+    <div class="section-title">2. 태그라이드 이용자 심층 분석 (271명)</div>
+    <div class="grid-3">
+      <div class="chart-card">
+        <h3>작년 태그라이드 이용 횟수</h3>
+        <div class="chart-wrap"><canvas id="chart-tr-freq"></canvas></div>
+      </div>
+      <div class="chart-card">
+        <h3>태그라이드 선택 이유</h3>
+        <div class="chart-wrap"><canvas id="chart-tr-reason"></canvas></div>
+      </div>
+      <div class="chart-card">
+        <h3>가격 인식</h3>
+        <div class="chart-wrap"><canvas id="chart-tr-price"></canvas></div>
+      </div>
+    </div>
+    <div class="grid-2" style="margin-top:16px;">
+      <div class="chart-card">
+        <h3>이용 이후 행동</h3>
+        <div class="chart-wrap"><canvas id="chart-tr-after"></canvas></div>
+      </div>
+      <div class="chart-card">
+        <h3>이전 공유 모빌리티 경험</h3>
+        <div class="chart-wrap"><canvas id="chart-tr-prev"></canvas></div>
+        <div class="insight-box">
+          태그라이드 이용자의 <strong>21.8%</strong>는 이전에 공유 킥보드/자전거 경험이 없던 신규 유입층입니다. 태그라이드가 새로운 사용자 유입 채널로 기능하고 있음을 시사합니다.
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Section 3: 인지 미이용자 분석 -->
+  <div class="section">
+    <div class="section-title">3. 인지했으나 미이용자 – 이탈 원인 분석 (428명)</div>
+    <div class="grid-2">
+      <div class="chart-card">
+        <h3>태그라이드 미이용 이유</h3>
+        <div class="chart-wrap-tall"><canvas id="chart-barrier"></canvas></div>
+      </div>
+      <div class="chart-card">
+        <h3>미이용 이유 카테고리화</h3>
+        <table>
+          <thead>
+            <tr><th>카테고리</th><th>주요 이유</th><th>비중</th></tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><strong>편의성 부족</strong></td>
+              <td>앱 이용이 더 편하다</td>
+              <td>46.4%</td>
+            </tr>
+            <tr>
+              <td><strong>이용방법 미숙지</strong></td>
+              <td>어떻게 이용하는지 몰랐다</td>
+              <td>32.0%</td>
+            </tr>
+            <tr>
+              <td><strong>가격 저항</strong></td>
+              <td>가격이 비싸 보였다</td>
+              <td>19.8%</td>
+            </tr>
+            <tr>
+              <td><strong>접근성 부족</strong></td>
+              <td>이용할 기회가 없었다<br>(주변에 기기 미배치)</td>
+              <td>12.9%</td>
+            </tr>
+            <tr>
+              <td><strong>인지 부족</strong></td>
+              <td>태그라이드가 있는지 몰랐다</td>
+              <td>6.1%</td>
+            </tr>
+          </tbody>
+        </table>
+        <div class="insight-box">
+          미이용의 가장 큰 원인은 <strong>"앱이 더 편하다"(46.4%)</strong>는 인식이며, 두 번째로 <strong>"이용 방법을 모른다"(32.0%)</strong>가 차지합니다. 즉, 태그라이드의 편의성 우위를 명확히 전달하고 이용 방법 안내를 강화하면 전환율 개선이 가능합니다.
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Key Insights -->
+  <div class="key-insight">
+    <h2>핵심 인사이트 요약</h2>
+    <ul>
+      <li><strong>이용자 특성:</strong> 태그라이드 이용자는 지쿠 헤비 유저(매일 29.5%, 주 2-3회 28.4%)이며, 19세 이하(41.0%) + 20대(43.2%)로 젊은 층이 84.2%를 차지합니다.</li>
+      <li><strong>핵심 이용 동기:</strong> "앱 없이 탑승 가능"(41.3%), "앱 안 열고 탑승"(37.6%), "환승 할인"(31.4%)이 주요 선택 이유입니다.</li>
+      <li><strong>가격 저항:</strong> 이용자의 42.1%가 "훨씬 비싸다"고 느꼈고, 이용 후 34.3%가 앱으로 복귀했습니다. 가격 경쟁력 확보가 리텐션 핵심입니다.</li>
+      <li><strong>전환 장벽:</strong> 인지 미이용자의 46.4%가 "앱이 더 편하다", 32.0%가 "이용방법 모름"을 이유로 꼽아 UX 개선 및 교육이 시급합니다.</li>
+      <li><strong>신규 유입 효과:</strong> 이용자의 21.8%가 공유 모빌리티 첫 경험으로 태그라이드를 사용 → 비앱 유저 진입 채널로서 가치가 있습니다.</li>
+      <li><strong>미인지자:</strong> 전체의 33.2%가 태그라이드 자체를 모르며, 미인지 그룹은 50대 이상(11.2%) 비중이 상대적으로 높아 중장년층 대상 인지도 확대가 필요합니다.</li>
+    </ul>
+  </div>
+</div>
+
+<script>
+Chart.defaults.font.family = "'Pretendard', -apple-system, sans-serif";
+Chart.defaults.font.size = 12;
+const BLUE = '#0984e3', YELLOW = '#fdcb6e', RED = '#d63031', GREEN = '#00b894', PURPLE = '#6c5ce7', GREY = '#b2bec3';
+
+// Chart 1: 이용 빈도
+new Chart(document.getElementById('chart-freq'), {
+  type: 'bar',
+  data: {
+    labels: ['거의 매일', '주 2-3회', '주 1회', '월 1회', '미이용'],
+    datasets: [
+      { label: '이용자', data: [29.5, 28.4, 18.1, 15.1, 8.9], backgroundColor: BLUE },
+      { label: '인지 미이용', data: [27.1, 33.2, 16.6, 14.5, 8.6], backgroundColor: YELLOW },
+      { label: '미인지', data: [19.9, 27.7, 18.7, 16.7, 17.0], backgroundColor: RED },
+    ]
+  },
+  options: {
+    responsive: true, maintainAspectRatio: false,
+    plugins: { legend: { position: 'bottom' } },
+    scales: { y: { beginAtZero: true, ticks: { callback: v => v + '%' } } }
+  }
+});
+
+// Chart 2: 이용 상황
+new Chart(document.getElementById('chart-situation'), {
+  type: 'bar',
+  data: {
+    labels: ['급한 이동', '출근', '등교', '하교', '약속/모임', '퇴근'],
+    datasets: [
+      { label: '이용자', data: [45.0, 31.7, 27.7, 25.1, 22.9, 18.8], backgroundColor: BLUE },
+      { label: '인지 미이용', data: [56.3, 22.9, 25.7, 26.9, 26.4, 22.2], backgroundColor: YELLOW },
+      { label: '미인지', data: [58.8, 16.7, 20.5, 20.5, 21.6, 13.3], backgroundColor: RED },
+    ]
+  },
+  options: {
+    indexAxis: 'y',
+    responsive: true, maintainAspectRatio: false,
+    plugins: { legend: { position: 'bottom' } },
+    scales: { x: { beginAtZero: true, ticks: { callback: v => v + '%' } } }
+  }
+});
+
+// Chart 3: 선택 이유
+new Chart(document.getElementById('chart-reason'), {
+  type: 'bar',
+  data: {
+    labels: ['빠르고 편리', '대중교통 대비 자유', '가격 합리적', '기기 접근성', '앱 사용 익숙'],
+    datasets: [
+      { label: '이용자', data: [78.6, 32.5, 26.2, 20.3, 12.2], backgroundColor: BLUE },
+      { label: '인지 미이용', data: [79.4, 34.1, 29.9, 25.5, 16.4], backgroundColor: YELLOW },
+      { label: '미인지', data: [76.1, 33.7, 24.5, 23.9, 15.6], backgroundColor: RED },
+    ]
+  },
+  options: {
+    indexAxis: 'y',
+    responsive: true, maintainAspectRatio: false,
+    plugins: { legend: { position: 'bottom' } },
+    scales: { x: { beginAtZero: true, ticks: { callback: v => v + '%' } } }
+  }
+});
+
+// Chart 4: 연령대
+new Chart(document.getElementById('chart-age'), {
+  type: 'bar',
+  data: {
+    labels: ['19세 이하', '20-29세', '30-39세', '40-49세', '50세 이상'],
+    datasets: [
+      { label: '이용자', data: [41.0, 43.2, 8.1, 5.5, 2.2], backgroundColor: BLUE },
+      { label: '인지 미이용', data: [36.2, 42.1, 10.0, 8.9, 2.8], backgroundColor: YELLOW },
+      { label: '미인지', data: [26.5, 43.8, 11.5, 6.9, 11.2], backgroundColor: RED },
+    ]
+  },
+  options: {
+    responsive: true, maintainAspectRatio: false,
+    plugins: { legend: { position: 'bottom' } },
+    scales: { y: { beginAtZero: true, ticks: { callback: v => v + '%' } } }
+  }
+});
+
+// Chart 5: 태그라이드 이용 횟수
+new Chart(document.getElementById('chart-tr-freq'), {
+  type: 'doughnut',
+  data: {
+    labels: ['1회', '2-3회', '4회 이상'],
+    datasets: [{ data: [118, 82, 71], backgroundColor: [GREY, YELLOW, BLUE] }]
+  },
+  options: {
+    responsive: true, maintainAspectRatio: false,
+    plugins: { legend: { position: 'bottom' } }
+  }
+});
+
+// Chart 6: 태그라이드 선택 이유
+new Chart(document.getElementById('chart-tr-reason'), {
+  type: 'bar',
+  data: {
+    labels: ['앱 없이 탑승', '앱 안열고 탑승', '환승 할인', '근처 기기', '동행자 편의'],
+    datasets: [{ data: [41.3, 37.6, 31.4, 17.0, 11.1], backgroundColor: [BLUE, PURPLE, GREEN, YELLOW, RED] }]
+  },
+  options: {
+    indexAxis: 'y',
+    responsive: true, maintainAspectRatio: false,
+    plugins: { legend: { display: false } },
+    scales: { x: { beginAtZero: true, ticks: { callback: v => v + '%' } } }
+  }
+});
+
+// Chart 7: 가격 인식
+new Chart(document.getElementById('chart-tr-price'), {
+  type: 'doughnut',
+  data: {
+    labels: ['훨씬 비싸다', '조금 비싸지만 편의성 큼', '비슷하다', '잘 모르겠다'],
+    datasets: [{ data: [114, 82, 41, 34], backgroundColor: [RED, YELLOW, GREEN, GREY] }]
+  },
+  options: {
+    responsive: true, maintainAspectRatio: false,
+    plugins: { legend: { position: 'bottom' } }
+  }
+});
+
+// Chart 8: 이용 이후 행동
+new Chart(document.getElementById('chart-tr-after'), {
+  type: 'doughnut',
+  data: {
+    labels: ['앱 이용 복귀', '상황별 병행', '태그라이드 계속', 'PM 이용 감소'],
+    datasets: [{ data: [93, 82, 70, 26], backgroundColor: [RED, YELLOW, BLUE, GREY] }]
+  },
+  options: {
+    responsive: true, maintainAspectRatio: false,
+    plugins: { legend: { position: 'bottom' } }
+  }
+});
+
+// Chart 9: 이전 경험
+new Chart(document.getElementById('chart-tr-prev'), {
+  type: 'doughnut',
+  data: {
+    labels: ['있다', '없다'],
+    datasets: [{ data: [212, 59], backgroundColor: [BLUE, GREY] }]
+  },
+  options: {
+    responsive: true, maintainAspectRatio: false,
+    plugins: { legend: { position: 'bottom' } }
+  }
+});
+
+// Chart 10: 미이용 이유
+new Chart(document.getElementById('chart-barrier'), {
+  type: 'bar',
+  data: {
+    labels: ['앱 이용이 더 편하다', '이용 방법 모름', '가격이 비싸 보임', '주변에 기기 없음', '태그라이드 존재 모름'],
+    datasets: [{
+      data: [46.4, 32.0, 19.8, 12.9, 6.1],
+      backgroundColor: [RED, YELLOW, '#e17055', GREY, '#b2bec3']
+    }]
+  },
+  options: {
+    indexAxis: 'y',
+    responsive: true, maintainAspectRatio: false,
+    plugins: { legend: { display: false } },
+    scales: { x: { beginAtZero: true, ticks: { callback: v => v + '%' } } }
+  }
+});
+</script>
+</body>
+</html>
